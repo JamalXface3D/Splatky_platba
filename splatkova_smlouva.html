@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Splátkové Smlouvy – Zastavárna Výsluní</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    /* ========================================================
+       RESET & BASE
+    ======================================================== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #eef1f6;
+      color: #2c3e50;
+      min-height: 100vh;
+      padding: 32px 16px 64px;
+    }
+
+    /* ========================================================
+       APP WRAPPER
+    ======================================================== */
+    .app-wrapper {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 4px 32px rgba(44,62,80,0.10), 0 1px 4px rgba(44,62,80,0.05);
+      overflow: hidden;
+    }
+
+    /* ========================================================
+       HEADER
+    ======================================================== */
+    .app-header {
+      background: #fff;
+      border-bottom: 1.5px solid #e8edf4;
+      padding: 24px 40px;
+      display: flex;
+      align-items: center;
+      gap: 22px;
+    }
+    .header-logo { flex-shrink: 0; line-height: 0; }
+    .header-logo img { max-height: 80px; display: block; }
+    .header-logo .logo-ph {
+      width: 80px; height: 80px;
+      background: linear-gradient(135deg, #3b6ef8 0%, #2254e0 100%);
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 28px; font-weight: 900; letter-spacing: -1px;
+    }
+    .header-slogan {
+      font-size: 26px;
+      font-weight: 800;
+      color: #1a202c;
+      letter-spacing: -0.5px;
+      line-height: 1.1;
+    }
+    .header-slogan span { color: #3b6ef8; }
+    .header-subtitle {
+      font-size: 13px;
+      color: #90a0b8;
+      font-weight: 500;
+      margin-top: 4px;
+    }
+
+    /* ========================================================
+       FORM BODY
+    ======================================================== */
+    .form-body { padding: 32px 40px 40px; }
+    .form-block { margin-bottom: 34px; }
+
+    .block-label {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.1px;
+      color: #b0bcce;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .block-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #e8edf4;
+    }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .col-full { grid-column: 1 / -1; }
+
+    .fld { display: flex; flex-direction: column; gap: 5px; }
+
+    .fld-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #5a6e88;
+    }
+
+    input[type=text],
+    input[type=number],
+    select {
+      border: 1.5px solid #dce5f0;
+      border-radius: 10px;
+      padding: 9px 13px;
+      font-size: 14px;
+      color: #1e2d40;
+      background: #f8fbfe;
+      outline: none;
+      transition: border-color .18s, box-shadow .18s, background .18s;
+      font-family: inherit;
+      width: 100%;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2390a0b8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+    }
+    input[type=text]:focus, input[type=number]:focus, select:focus {
+      border-color: #3b6ef8;
+      box-shadow: 0 0 0 3px rgba(59,110,248,.13);
+      background: #fff;
+    }
+    input:disabled, select:disabled {
+      background: #f1f5fb;
+      color: #90a0b8;
+      cursor: default;
+      border-color: #e0e8f2;
+    }
+
+    .calc-hint {
+      font-size: 11.5px;
+      color: #3b6ef8;
+      font-weight: 600;
+      min-height: 16px;
+    }
+
+    /* ========================================================
+       EMPLOYEE BLOCK
+    ======================================================== */
+    .emp-row { display: flex; gap: 8px; align-items: flex-end; }
+    .emp-row .fld { flex: 1; }
+
+    .btn-icon {
+      background: #f1f5fb;
+      border: 1.5px solid #dce5f0;
+      border-radius: 10px;
+      padding: 0 12px;
+      cursor: pointer;
+      font-size: 19px;
+      line-height: 1;
+      flex-shrink: 0;
+      transition: background .15s;
+      height: 40px;
+      display: flex;
+      align-items: center;
+    }
+    .btn-icon:hover { background: #dce5f0; }
+
+    .emp-panel {
+      margin-top: 12px;
+      background: #f7fafd;
+      border: 1.5px dashed #c8d5eb;
+      border-radius: 12px;
+      padding: 16px;
+      display: none;
+    }
+    .emp-panel.open { display: block; }
+
+    .emp-panel-title {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .9px;
+      color: #b0bcce;
+      margin-bottom: 11px;
+    }
+
+    .emp-add-row { display: flex; gap: 8px; }
+    .emp-add-row input { flex: 1; }
+    .emp-list { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
+
+    .emp-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #fff;
+      border: 1.5px solid #dce5f0;
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 13.5px;
+      color: #2c3e50;
+    }
+    .emp-initials-badge {
+      font-size: 11px;
+      color: #3b6ef8;
+      font-weight: 700;
+      margin-left: 8px;
+      background: #eef2ff;
+      padding: 1px 6px;
+      border-radius: 5px;
+    }
+    .btn-rm {
+      background: none; border: none;
+      color: #e53e3e; cursor: pointer;
+      font-size: 16px; padding: 2px 6px;
+      border-radius: 5px;
+      transition: background .15s;
+      line-height: 1;
+    }
+    .btn-rm:hover { background: #fff5f5; }
+
+    /* ========================================================
+       RADIO TOGGLE
+    ======================================================== */
+    .radio-group {
+      display: inline-flex;
+      border: 1.5px solid #dce5f0;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .radio-opt { display: flex; align-items: center; }
+    .radio-opt:not(:last-child) { border-right: 1.5px solid #dce5f0; }
+    .radio-opt input[type=radio] { display: none; }
+    .radio-opt label {
+      padding: 9px 28px;
+      cursor: pointer;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #90a0b8;
+      background: #f8fbfe;
+      transition: all .18s;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .radio-opt input[type=radio]:checked + label {
+      background: #3b6ef8;
+      color: #fff;
+    }
+
+    /* ========================================================
+       CHECKBOX
+    ======================================================== */
+    .cb-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 15px;
+      background: #f0f5ff;
+      border: 1.5px solid #c5d7fd;
+      border-radius: 10px;
+    }
+    .cb-wrap input[type=checkbox] {
+      width: 17px; height: 17px;
+      accent-color: #3b6ef8;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .cb-wrap label {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #2c4a8e;
+      cursor: pointer;
+    }
+
+    /* ========================================================
+       BUTTONS
+    ======================================================== */
+    .btn-primary {
+      background: linear-gradient(135deg, #3b6ef8 0%, #2254e0 100%);
+      color: #fff; border: none;
+      border-radius: 11px;
+      padding: 13px 38px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 18px rgba(59,110,248,.36);
+      transition: transform .18s, box-shadow .18s;
+      letter-spacing: .2px;
+      font-family: inherit;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(59,110,248,.46); }
+
+    .btn-sec {
+      background: #f1f5fb; color: #4a5e78;
+      border: 1.5px solid #dce5f0;
+      border-radius: 11px;
+      padding: 12px 28px;
+      font-size: 14px; font-weight: 700;
+      cursor: pointer;
+      transition: background .15s;
+      font-family: inherit;
+    }
+    .btn-sec:hover { background: #dce5f0; }
+
+    .btn-sm {
+      background: #3b6ef8; color: #fff;
+      border: none; border-radius: 8px;
+      padding: 9px 18px;
+      font-size: 13px; font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background .15s;
+      white-space: nowrap;
+    }
+    .btn-sm:hover { background: #2254e0; }
+
+    .actions {
+      display: flex; gap: 12px;
+      justify-content: flex-end;
+      align-items: center;
+      padding-top: 26px; margin-top: 16px;
+      border-top: 1.5px solid #e8edf4;
+    }
+
+    /* ── Sheets status toast ── */
+    #sheets-toast {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-right: auto;
+      transition: opacity .3s;
+    }
+    #sheets-toast.sending {
+      display: flex;
+      background: #eef2ff;
+      color: #3b6ef8;
+      border: 1.5px solid #c5d7fd;
+    }
+    #sheets-toast.ok {
+      display: flex;
+      background: #f0fdf4;
+      color: #166534;
+      border: 1.5px solid #bbf7d0;
+    }
+    #sheets-toast.err {
+      display: flex;
+      background: #fff5f5;
+      color: #991b1b;
+      border: 1.5px solid #fecaca;
+    }
+    #sheets-toast.no-url {
+      display: flex;
+      background: #fffbeb;
+      color: #92400e;
+      border: 1.5px solid #fde68a;
+    }
+    .spin {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid #c5d7fd;
+      border-top-color: #3b6ef8;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ========================================================
+       PRINT STYLES
+    ======================================================== */
+    @media print {
+      @page { size: A4 portrait; margin: 7mm 9mm; }
+
+      body { background: #fff !important; padding: 0; margin: 0; }
+      .app-wrapper { display: none !important; }
+      #print-area { display: block !important; }
+
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      .p-half {
+        height: 133mm;
+        overflow: visible;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      .cut-line {
+        height: 9mm;
+        display: flex;
+        align-items: center;
+      }
+      .cut-dash { flex: 1; border-top: 1.2pt dashed #555; }
+      .cut-text {
+        font-size: 7pt;
+        color: #555;
+        padding: 0 4mm;
+        white-space: nowrap;
+        font-family: Arial, sans-serif;
+      }
+
+      /* Contract layout */
+      .ct-wrap {
+        height: 133mm;
+        overflow: hidden;
+      }
+
+      .ct-head {
+        display: flex;
+        align-items: center;
+        gap: 3mm;
+        padding-bottom: 1.5mm;
+        border-bottom: 0.8pt solid #000;
+        margin-bottom: 2mm;
+      }
+      .ct-head-logo { flex-shrink: 0; }
+      .ct-head-logo img { max-height: 20pt; display: block; }
+      .ct-company-name {
+        font-size: 7.5pt;
+        font-weight: bold;
+        line-height: 1.2;
+        max-width: 40mm;
+      }
+      .ct-head-title { flex: 1; text-align: center; }
+      .ct-doc-title {
+        font-size: 9.5pt;
+        font-weight: bold;
+        letter-spacing: 0.1pt;
+        line-height: 1.2;
+      }
+      .ct-doc-meta {
+        font-size: 7pt;
+        color: #333;
+        margin-top: 1mm;
+        line-height: 1.4;
+      }
+      .ct-head-badge {
+        font-size: 6.5pt;
+        font-weight: bold;
+        border: 0.8pt solid #000;
+        padding: 1mm 2mm;
+        white-space: nowrap;
+        text-align: center;
+        flex-shrink: 0;
+        line-height: 1.3;
+      }
+
+      .ct-art { margin-bottom: 1.8mm; }
+      .ct-art-title {
+        font-size: 7pt;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.4pt;
+        padding-bottom: 0.5mm;
+        border-bottom: 0.4pt solid #aaa;
+        margin-bottom: 1.5mm;
+      }
+      .ct-art-body {
+        font-size: 7.5pt;
+        line-height: 1.42;
+      }
+
+      .ct-parties { display: flex; gap: 4mm; }
+      .ct-party { flex: 1; font-size: 7.5pt; line-height: 1.52; }
+      .party-title {
+        font-weight: bold;
+        text-decoration: underline;
+        display: block;
+        margin-bottom: 0.5mm;
+      }
+
+      .inst-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1.5mm;
+      }
+      .inst-table th {
+        border: 0.4pt solid #777;
+        background: #ebebeb;
+        padding: 1mm 1.5mm;
+        text-align: center;
+        font-size: 6.5pt;
+        font-weight: bold;
+      }
+      .inst-table td {
+        border: 0.4pt solid #777;
+        padding: 1mm 1.5mm;
+        text-align: center;
+        font-size: 7pt;
+      }
+
+      .bank-box {
+        margin-top: 1.5mm;
+        font-size: 6.8pt;
+        line-height: 1.38;
+        background: #f5f5f5;
+        border: 0.4pt solid #aaa;
+        padding: 1mm 2mm;
+      }
+
+      .ct-legal {
+        font-size: 6.8pt !important;
+        line-height: 1.36 !important;
+      }
+
+      .ct-footer {
+        margin-top: 2mm;
+        display: flex;
+        align-items: flex-end;
+        gap: 4mm;
+      }
+      .ct-footer-date { flex: 1; font-size: 7pt; line-height: 1.6; }
+      .ct-sigs { display: flex; gap: 7mm; align-items: flex-end; }
+      .ct-sig { text-align: center; font-size: 6.5pt; }
+      .ct-sig-line { border-bottom: 0.6pt solid #000; width: 30mm; height: 7mm; margin-bottom: 1mm; }
+      .ct-qr { text-align: center; width: 26mm; flex-shrink: 0; }
+      .ct-qr canvas, .ct-qr img { width: 24mm !important; height: 24mm !important; display: block; margin: 0 auto; }
+      .ct-qr-label { font-size: 5.5pt; margin-top: 0.5mm; line-height: 1.3; }
+    }
+
+    #print-area { display: none; }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     APP UI
+============================================================ -->
+<div class="app-wrapper" id="app">
+
+  <!-- HEADER -->
+  <div class="app-header">
+    <div class="header-logo">
+      <img src="logo.png" alt="Logo"
+           onerror="this.style.display='none';document.getElementById('logo-ph').style.display='flex'">
+      <div class="logo-ph" id="logo-ph" style="display:none">ZV</div>
+    </div>
+    <div>
+      <div class="header-slogan">Splátky <span>bez navýšení</span></div>
+      <div class="header-subtitle">Systém splátkových smluv – Zastavárna Výsluní</div>
+    </div>
+  </div>
+
+  <!-- FORM -->
+  <div class="form-body">
+
+    <!-- ── BLOK 1 ── -->
+    <div class="form-block">
+      <div class="block-label">1 — Provozovna a zaměstnanec</div>
+      <div class="grid-2">
+        <div class="fld">
+          <span class="fld-label">Pobočka vystavení</span>
+          <select id="sel-branch" onchange="onBranchChange()">
+            <option value="UL">Ústí nad Labem</option>
+            <option value="KR">Krupka – Bohosudov</option>
+          </select>
+        </div>
+        <div class="fld">
+          <span class="fld-label">Číslo smlouvy (automatické)</span>
+          <input type="text" id="contract-num" disabled>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <div class="fld-label" style="margin-bottom:6px;">Vystavil / Zaměstnanec</div>
+        <div class="emp-row">
+          <div class="fld">
+            <select id="sel-emp">
+              <option value="">— vyberte zaměstnance —</option>
+            </select>
+          </div>
+          <button class="btn-icon" onclick="toggleEmpPanel()" title="Správa zaměstnanců">⚙️</button>
+        </div>
+
+        <div class="emp-panel" id="emp-panel">
+          <div class="emp-panel-title">Správa zaměstnanců — ukládá se trvale do paměti prohlížeče</div>
+          <div class="emp-add-row">
+            <input type="text" id="emp-new-name" placeholder="Celé jméno, např. Jan Novák">
+            <button class="btn-sm" onclick="addEmployee()">Přidat</button>
+          </div>
+          <div class="emp-list" id="emp-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── BLOK 2 ── -->
+    <div class="form-block">
+      <div class="block-label">2 — Údaje o zákazníkovi</div>
+      <div class="grid-2">
+        <div class="fld col-full">
+          <span class="fld-label">Jméno a příjmení zákazníka</span>
+          <input type="text" id="cust-name" placeholder="Petr Svoboda">
+        </div>
+        <div class="fld">
+          <span class="fld-label">Typ identifikace</span>
+          <select id="cust-id-type" onchange="onIdTypeChange()">
+            <option value="OP">Občanský průkaz (OP)</option>
+            <option value="RC">Rodné číslo (RČ)</option>
+          </select>
+        </div>
+        <div class="fld">
+          <span class="fld-label" id="lbl-id-num">Číslo OP</span>
+          <input type="text" id="cust-id-num" placeholder="123456789">
+        </div>
+        <div class="fld">
+          <span class="fld-label">Telefonní číslo</span>
+          <input type="text" id="cust-phone" value="+420 ">
+        </div>
+        <div class="fld">
+          <span class="fld-label">Adresa trvalého bydliště</span>
+          <input type="text" id="cust-addr" placeholder="Ulice 12, 400 01 Ústí nad Labem">
+        </div>
+      </div>
+    </div>
+
+    <!-- ── BLOK 3 ── -->
+    <div class="form-block">
+      <div class="block-label">3 — Informace o zboží</div>
+
+      <div style="margin-bottom:14px;">
+        <div class="fld-label" style="margin-bottom:6px;">Typ zboží</div>
+        <div class="radio-group">
+          <div class="radio-opt">
+            <input type="radio" name="goods-type" id="gt-other" value="other" checked onchange="onGoodsTypeChange()">
+            <label for="gt-other">Ostatní zboží</label>
+          </div>
+          <div class="radio-opt">
+            <input type="radio" name="goods-type" id="gt-gold" value="gold" onchange="onGoodsTypeChange()">
+            <label for="gt-gold">Zlato</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="fld col-full">
+          <span class="fld-label">Název / Popis zboží</span>
+          <input type="text" id="goods-desc" placeholder="Stručný popis předmětu">
+        </div>
+        <div class="fld">
+          <span class="fld-label">Skladové číslo</span>
+          <input type="text" id="goods-sku" placeholder="Např. SK-1234">
+        </div>
+
+        <!-- Gold only -->
+        <div class="fld" id="row-weight" style="display:none">
+          <span class="fld-label">Váha (gramy)</span>
+          <input type="number" id="goods-weight" placeholder="0.00" min="0" step="0.01">
+        </div>
+
+        <!-- Other goods only -->
+        <div class="fld" id="row-brand">
+          <span class="fld-label">Značka / Model</span>
+          <input type="text" id="goods-brand" placeholder="Apple iPhone 14">
+        </div>
+        <div class="fld" id="row-sn">
+          <span class="fld-label">Sériové číslo (S/N)</span>
+          <input type="text" id="goods-sn" placeholder="XXXXXXXXXXX">
+        </div>
+
+        <div class="fld">
+          <span class="fld-label">Celková cena zboží (Kč)</span>
+          <input type="number" id="price-total" placeholder="0" min="0" oninput="onPriceChange()">
+        </div>
+      </div>
+    </div>
+
+    <!-- ── BLOK 4 ── -->
+    <div class="form-block">
+      <div class="block-label">4 — Platební podmínky</div>
+      <div class="grid-2">
+        <div class="fld">
+          <span class="fld-label">Akontace (Kč)</span>
+          <input type="number" id="akontace" placeholder="0" min="0" oninput="onAkontaceChange()">
+          <div class="calc-hint" id="hint-akontace"></div>
+        </div>
+        <div class="fld">
+          <span class="fld-label">Zbývající doplatek (Kč)</span>
+          <input type="number" id="doplatek" disabled>
+        </div>
+        <div class="fld">
+          <span class="fld-label">Počet měsíčních splátek</span>
+          <select id="sel-months" onchange="recalcMonths()">
+            <option value="1">1 měsíc</option>
+            <option value="2">2 měsíce</option>
+            <option value="3" selected>3 měsíce</option>
+            <option value="4">4 měsíce</option>
+            <option value="5">5 měsíců</option>
+            <option value="6">6 měsíců</option>
+          </select>
+        </div>
+        <div class="fld">
+          <span class="fld-label">Běžná měsíční splátka (Kč)</span>
+          <input type="number" id="monthly-pay" disabled>
+          <div class="calc-hint" id="hint-monthly"></div>
+        </div>
+      </div>
+
+      <div class="cb-wrap" style="margin-top:14px;">
+        <input type="checkbox" id="cb-bank">
+        <label for="cb-bank">Povolit platby na bankovní účet (klient z daleka)</label>
+      </div>
+    </div>
+
+    <div class="actions">
+      <div id="sheets-toast"></div>
+      <button class="btn-sec" onclick="clearForm()">🗑&nbsp; Vymazat formulář</button>
+      <button class="btn-primary" onclick="doPrint()">🖨&nbsp; Vytisknout smlouvu</button>
+    </div>
+
+  </div><!-- /form-body -->
+</div><!-- /app-wrapper -->
+
+<!-- ============================================================
+     PRINT AREA
+============================================================ -->
+<div id="print-area">
+  <div class="p-half" id="half-orig"></div>
+  <div class="cut-line">
+    <div class="cut-dash"></div>
+    <div class="cut-text">✂&nbsp;&nbsp;ZDE ROZSTŘIHNOUT &nbsp;( ORIGINÁL / KOPIE )&nbsp;&nbsp;✂</div>
+    <div class="cut-dash"></div>
+  </div>
+  <div class="p-half" id="half-copy"></div>
+</div>
+
+<!-- ============================================================
+     JAVASCRIPT
+============================================================ -->
+<script>
+/* ============================================================
+   CONFIGURATION
+============================================================ */
+// ⬇ Sem vlož URL z Google Apps Script nasazení (Nasadit → Nové nasazení → Webová aplikace)
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbydCIN9A5k50ya0PiMsb5gtxnTx3l6Yr9gdUAqXbRtkCoF3INz50nZr6wXP4rz8E8YJ/exec';
+
+const BRANCHES = {
+  UL: {
+    label:        'Ústí nad Labem',
+    company:      'Zastavárna&amp;Bazar Výsluní s.r.o.',
+    companyPlain: 'Zastavárna&Bazar Výsluní s.r.o.',
+    address:      'V Oblouku 587/19, 400 07 Ústí nad Labem',
+    ico:          '06501729',
+    tel:          '+420 604 772 217'
+  },
+  KR: {
+    label:        'Krupka – Bohosudov',
+    company:      'Zastavárna Výsluní s.r.o.',
+    companyPlain: 'Zastavárna Výsluní s.r.o.',
+    address:      'Mariánské náměstí 116/31, 417 42 Krupka',
+    ico:          '06501737',
+    tel:          '+420 605 373 171'
+  }
+};
+
+/* ============================================================
+   HELPERS
+============================================================ */
+function esc(s) {
+  return String(s || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmt(n) { return Number(n).toLocaleString('cs-CZ'); }
+function pad(n) { return String(n).padStart(2, '0'); }
+function fmtDate(d) {
+  return pad(d.getDate()) + '.' + pad(d.getMonth()+1) + '.' + d.getFullYear();
+}
+function todayStr() { return fmtDate(new Date()); }
+function ceilHundreds(n) { return Math.ceil(n / 100) * 100; }
+function lastDayOfMonth(y, m) { return new Date(y, m + 1, 0); }
+
+/* ============================================================
+   NUMBER TO CZECH WORDS
+============================================================ */
+function numToWords(n) {
+  n = Math.round(n);
+  if (n === 0) return 'nula';
+  const ones  = ['','jedna','dvě','tři','čtyři','pět','šest','sedm','osm','devět',
+    'deset','jedenáct','dvanáct','třináct','čtrnáct','patnáct',
+    'šestnáct','sedmnáct','osmnáct','devatenáct'];
+  const tens  = ['','','dvacet','třicet','čtyřicet','padesát',
+    'šedesát','sedmdesát','osmdesát','devadesát'];
+  const hunds = ['','sto','dvěstě','třista','čtyřista',
+    'pětset','šestset','sedmset','osmset','devětset'];
+  function b1000(x) {
+    if (!x) return '';
+    if (x < 20) return ones[x];
+    if (x < 100) { const t=Math.floor(x/10),r=x%10; return tens[t]+(r?' '+ones[r]:''); }
+    const h=Math.floor(x/100),r=x%100; return hunds[h]+(r?' '+b1000(r):'');
+  }
+  let r = '';
+  if (n >= 1000000) {
+    const m=Math.floor(n/1000000); n%=1000000;
+    r += (m===1?'jeden milion':m<5?b1000(m)+' miliony':b1000(m)+' milionů')+' ';
+  }
+  if (n >= 1000) {
+    const t=Math.floor(n/1000); n%=1000;
+    r += (t===1?'jeden tisíc':t<5?b1000(t)+' tisíce':b1000(t)+' tisíc')+' ';
+  }
+  if (n > 0) r += b1000(n);
+  return r.trim();
+}
+
+/* ============================================================
+   EMPLOYEES
+============================================================ */
+function loadEmployees() {
+  try { return JSON.parse(localStorage.getItem('zv_employees') || '[]'); }
+  catch(e) { return []; }
+}
+function saveEmployees(arr) { localStorage.setItem('zv_employees', JSON.stringify(arr)); }
+
+function getInitials(name) {
+  return name.trim().split(/\s+/).map(w => (w[0]||'').toUpperCase()+'.').join('');
+}
+
+function renderEmployees() {
+  const arr = loadEmployees();
+  const prev = document.getElementById('sel-emp').value;
+
+  document.getElementById('emp-list').innerHTML = arr.map((n, i) => `
+    <div class="emp-item">
+      <span>${esc(n)} <span class="emp-initials-badge">${esc(getInitials(n))}</span></span>
+      <button class="btn-rm" onclick="removeEmployee(${i})" title="Odebrat">✕</button>
+    </div>`).join('');
+
+  document.getElementById('sel-emp').innerHTML =
+    '<option value="">— vyberte zaměstnance —</option>' +
+    arr.map(n => `<option value="${esc(n)}"${n===prev?' selected':''}>${esc(n)}</option>`).join('');
+}
+
+function addEmployee() {
+  const inp = document.getElementById('emp-new-name');
+  const name = inp.value.trim();
+  if (!name) return;
+  const arr = loadEmployees();
+  if (!arr.includes(name)) { arr.push(name); saveEmployees(arr); }
+  inp.value = '';
+  renderEmployees();
+}
+
+function removeEmployee(idx) {
+  const arr = loadEmployees(); arr.splice(idx, 1); saveEmployees(arr); renderEmployees();
+}
+
+function toggleEmpPanel() {
+  document.getElementById('emp-panel').classList.toggle('open');
+}
+
+document.getElementById('emp-new-name').addEventListener('keydown', ev => {
+  if (ev.key === 'Enter') { ev.preventDefault(); addEmployee(); }
+});
+
+/* ============================================================
+   CONTRACT NUMBER
+============================================================ */
+function getCounter() { return parseInt(localStorage.getItem('zv_ctr') || '1000', 10); }
+function bumpCounter() { const n = getCounter()+1; localStorage.setItem('zv_ctr', n); return n; }
+
+function buildContractNum(branch) {
+  const y = new Date().getFullYear();
+  return branch + '-' + y + '-' + String(getCounter()).padStart(4,'0');
+}
+function refreshContractNum() {
+  document.getElementById('contract-num').value =
+    buildContractNum(document.getElementById('sel-branch').value);
+}
+function onBranchChange() { refreshContractNum(); }
+
+/* ============================================================
+   UI TOGGLES
+============================================================ */
+function onIdTypeChange() {
+  const v = document.getElementById('cust-id-type').value;
+  document.getElementById('lbl-id-num').textContent = v === 'OP' ? 'Číslo OP' : 'Rodné číslo';
+}
+
+function onGoodsTypeChange() {
+  const gold = document.querySelector('input[name=goods-type]:checked').value === 'gold';
+  document.getElementById('row-weight').style.display = gold ? '' : 'none';
+  document.getElementById('row-brand').style.display  = gold ? 'none' : '';
+  document.getElementById('row-sn').style.display     = gold ? 'none' : '';
+}
+
+/* ============================================================
+   CALCULATIONS
+============================================================ */
+let akontaceManual = false;
+
+function onPriceChange() {
+  const total = parseFloat(document.getElementById('price-total').value) || 0;
+  if (!akontaceManual) {
+    const auto = Math.round(total * 0.20);
+    document.getElementById('akontace').value = auto || '';
+    document.getElementById('hint-akontace').textContent =
+      auto ? 'Auto 20 % = ' + fmt(auto) + ' Kč' : '';
+  }
+  recalcDoplatek();
+}
+
+function onAkontaceChange() {
+  akontaceManual = true;
+  document.getElementById('hint-akontace').textContent = '';
+  recalcDoplatek();
+}
+
+function recalcDoplatek() {
+  const total    = parseFloat(document.getElementById('price-total').value) || 0;
+  const akontace = parseFloat(document.getElementById('akontace').value)    || 0;
+  const dop      = Math.max(0, total - akontace);
+  document.getElementById('doplatek').value = dop || '';
+  recalcMonths();
+}
+
+function recalcMonths() {
+  const dop    = parseFloat(document.getElementById('doplatek').value) || 0;
+  const months = parseInt(document.getElementById('sel-months').value, 10);
+  if (!dop || !months) {
+    document.getElementById('monthly-pay').value = '';
+    document.getElementById('hint-monthly').textContent = '';
+    return;
+  }
+  const reg  = ceilHundreds(dop / months);
+  const last = dop - reg * (months - 1);
+  document.getElementById('monthly-pay').value = reg;
+  document.getElementById('hint-monthly').textContent =
+    months > 1 ? 'Poslední splátka (přesně): ' + fmt(last) + ' Kč' : '';
+}
+
+/* ============================================================
+   COLLECT FORM DATA
+============================================================ */
+function collectData() {
+  const branch = document.getElementById('sel-branch').value;
+  const bi     = BRANCHES[branch];
+  const emp    = document.getElementById('sel-emp').value;
+  const idSel  = document.getElementById('cust-id-type').value;
+  const total  = parseFloat(document.getElementById('price-total').value) || 0;
+  const ak     = parseFloat(document.getElementById('akontace').value)    || 0;
+  const dop    = parseFloat(document.getElementById('doplatek').value)    || 0;
+  const months = parseInt(document.getElementById('sel-months').value, 10);
+  const reg    = parseFloat(document.getElementById('monthly-pay').value) || 0;
+
+  const today  = new Date();
+  const rows   = [];
+  for (let i = 1; i <= months; i++) {
+    const due    = lastDayOfMonth(today.getFullYear(), today.getMonth() + i);
+    const amount = i < months ? reg : Math.max(0, dop - reg * (months - 1));
+    rows.push({ num: i, due: fmtDate(due), amount });
+  }
+
+  return {
+    branch, bi, empName: emp, initials: emp ? getInitials(emp) : '—',
+    contractNum : document.getElementById('contract-num').value,
+    custName    : document.getElementById('cust-name').value,
+    idTypeLabel : idSel === 'OP' ? 'Občanský průkaz č.' : 'Rodné číslo:',
+    idNum       : document.getElementById('cust-id-num').value,
+    phone       : document.getElementById('cust-phone').value,
+    addr        : document.getElementById('cust-addr').value,
+    goodsType   : document.querySelector('input[name=goods-type]:checked').value,
+    goodsDesc   : document.getElementById('goods-desc').value,
+    goodsSku    : document.getElementById('goods-sku').value,
+    goodsWeight : document.getElementById('goods-weight').value,
+    goodsBrand  : document.getElementById('goods-brand').value,
+    goodsSn     : document.getElementById('goods-sn').value,
+    total, ak, dop, months, reg, bankOk: document.getElementById('cb-bank').checked,
+    rows, today: todayStr()
+  };
+}
+
+/* ============================================================
+   BUILD HALF HTML
+============================================================ */
+function buildHalf(d, isOrig) {
+  const copyLabel = isOrig ? 'ORIGINÁL – PRO PRODEJCE' : 'KOPIE – PRO ZÁKAZNÍKA';
+  const qrId      = isOrig ? 'qr-orig' : 'qr-copy';
+
+  const goodsExtra = d.goodsType === 'gold'
+    ? '<b>Váha:</b> ' + (esc(d.goodsWeight)||'—') + '&nbsp;g'
+    : '<b>Značka/Model:</b> ' + (esc(d.goodsBrand)||'—') +
+      ' &nbsp;|&nbsp; <b>S/N:</b> ' + (esc(d.goodsSn)||'—');
+
+  const bankBox = d.bankOk
+    ? `<div class="bank-box"><b>Alternativní možnost úhrady:</b>
+       Na základě schválení obsluhy může kupující zasílat měsíční splátky na bankovní účet prodejce:
+       <b>1072463017/3030</b>, IBAN: <b>CZ28 3030 0000 0010 7246 3017</b>.
+       Kupující je povinen při platbě uvést jako Variabilní symbol číslo této smlouvy
+       (<b>${esc(d.contractNum)}</b>), jinak nelze platbu identifikovat.</div>`
+    : '';
+
+  const tRows = d.rows.map(r =>
+    `<tr>
+       <td>${r.num}.</td>
+       <td>${esc(r.due)}</td>
+       <td><b>${fmt(r.amount)}&nbsp;Kč</b></td>
+       <td>&nbsp;</td>
+       <td>&nbsp;</td>
+     </tr>`).join('');
+
+  const mLabel = d.months === 1 ? '1&nbsp;měsíční splátky'
+    : d.months < 5 ? d.months+'&nbsp;měsíční splátky'
+    : d.months+'&nbsp;měsíčních splátek';
+
+  return `<div class="ct-wrap">
+
+  <!-- HLAVIČKA -->
+  <div class="ct-head">
+    <div class="ct-head-logo">
+      <img src="logo.png" alt="" onerror="this.style.display='none'">
+      <div class="ct-company-name">${d.bi.company}</div>
+    </div>
+    <div class="ct-head-title">
+      <div class="ct-doc-title">SMLUVNÍ DOHODA O NÁKUPU ZBOŽÍ NA SPLÁTKY BEZ NAVÝŠENÍ</div>
+      <div class="ct-doc-meta">
+        Smlouva č.: <b>${esc(d.contractNum)}</b> &nbsp;|&nbsp;
+        Sklad. č.: <b>${esc(d.goodsSku)||'—'}</b> &nbsp;|&nbsp;
+        Datum: <b>${esc(d.today)}</b>
+      </div>
+    </div>
+    <div class="ct-head-badge">${copyLabel}</div>
+  </div>
+
+  <!-- ČL. 1 -->
+  <div class="ct-art">
+    <div class="ct-art-title">Článek 1 — Smluvní strany</div>
+    <div class="ct-art-body">
+      <div class="ct-parties">
+        <div class="ct-party">
+          <span class="party-title">Prodávající:</span>
+          ${d.bi.company}<br>
+          Sídlo: ${esc(d.bi.address)}<br>
+          IČO: ${esc(d.bi.ico)}<br>
+          Tel: ${esc(d.bi.tel)}<br>
+          Pracovník: <b>${esc(d.initials)}</b>
+        </div>
+        <div class="ct-party">
+          <span class="party-title">Kupující:</span>
+          ${esc(d.custName)||'—'}<br>
+          ${esc(d.idTypeLabel)} ${esc(d.idNum)||'—'}<br>
+          Tel: ${esc(d.phone)||'—'}<br>
+          Bydliště: ${esc(d.addr)||'—'}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ČL. 2 -->
+  <div class="ct-art">
+    <div class="ct-art-title">Článek 2 — Předmět smlouvy</div>
+    <div class="ct-art-body">
+      <b>Zboží:</b> ${esc(d.goodsDesc)||'—'} &nbsp;|&nbsp;
+      <b>Sklad. č.:</b> ${esc(d.goodsSku)||'—'} &nbsp;|&nbsp; ${goodsExtra}<br>
+      <b>Celková kupní cena:</b> <b>${fmt(d.total)}&nbsp;Kč</b>
+      (slovy: ${numToWords(d.total)} korun českých)
+    </div>
+  </div>
+
+  <!-- ČL. 3 -->
+  <div class="ct-art">
+    <div class="ct-art-title">Článek 3 — Platební podmínky</div>
+    <div class="ct-art-body">
+      <b>Akontace zaplacená při podpisu:</b> ${fmt(d.ak)}&nbsp;Kč &nbsp;|&nbsp;
+      <b>Zbývající doplatek:</b> ${fmt(d.dop)}&nbsp;Kč, rozložený do ${mLabel}.
+      <table class="inst-table">
+        <thead>
+          <tr>
+            <th>Splátka</th>
+            <th>Termín splatnosti do</th>
+            <th>Částka k úhradě</th>
+            <th>Datum úhrady</th>
+            <th>Podpis pracovníka</th>
+          </tr>
+        </thead>
+        <tbody>${tRows}</tbody>
+      </table>
+      ${bankBox}
+    </div>
+  </div>
+
+  <!-- ČL. 4 -->
+  <div class="ct-art">
+    <div class="ct-art-title">Článek 4 — Právní ujednání</div>
+    <div class="ct-art-body ct-legal">
+      <b>Cena a navýšení:</b> Cena zboží je konečná, bezúročná a během splácení se nijak nenavyšuje.
+      &#32;<b>Převzetí zboží:</b> Kupující bere na vědomí, že zboží po celou dobu splácení zůstává fyzicky
+      uloženo na prodejně prodejce. Kupující nabývá vlastnické právo a předmět si odnáší až po
+      stoprocentním uhrazení celkové ceny.
+      &#32;<b>Mimořádné splátky:</b> Kupující může splátku kdykoliv navýšit nebo doplatit celou smlouvu
+      dříve bez poplatků.
+      &#32;<b>Porušení smluvního vztahu:</b> Kupující je povinen provést úhradu minimálně jednou měsíčně.
+      Pokud platba nedorazí ani do 3 dnů od konce kalendářního měsíce, smlouva zaniká. Z důvodu
+      dlouhodobé blokace zboží jsou dosavadní zaplacené finance nevratné a propadají jako závazný
+      poplatek při přerušení splácení prodejci na krytí režie, ušlého zisku a blokace věci.
+      &#32;<b>Odklad:</b> O posun splatnosti o 10 dní lze požádat předem za poplatek 500&nbsp;Kč.
+      Podpisem smlouvy stvrzuje kupující platnost údajů a uděluje souhlas s GDPR pro interní správu
+      této smlouvy.
+    </div>
+  </div>
+
+  <!-- PATKA -->
+  <div class="ct-footer">
+    <div class="ct-footer-date">
+      V ${esc(d.bi.label)} dne <b>${esc(d.today)}</b>
+    </div>
+    <div class="ct-sigs">
+      <div class="ct-sig">
+        <div class="ct-sig-line"></div>
+        Kupující: ${esc(d.custName)||'……………………'}
+      </div>
+      <div class="ct-sig">
+        <div class="ct-sig-line"></div>
+        Prodávající: ${esc(d.initials)}
+      </div>
+    </div>
+    <div class="ct-qr" id="${qrId}"></div>
+  </div>
+
+</div>`;
+}
+
+/* ============================================================
+   PRINT
+============================================================ */
+function doPrint() {
+  const d = collectData();
+
+  document.getElementById('half-orig').innerHTML = buildHalf(d, true);
+  document.getElementById('half-copy').innerHTML = buildHalf(d, false);
+
+  // Krátký QR text = jednodušší/čitelnější kód při tisku
+  const qrText = d.contractNum;
+
+  ['qr-orig', 'qr-copy'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = '';
+    try {
+      // Generuj do dočasného skrytého divu
+      const tmp = document.createElement('div');
+      tmp.style.cssText = 'position:absolute;left:-9999px;top:-9999px';
+      document.body.appendChild(tmp);
+      new QRCode(tmp, { text: qrText, width: 120, height: 120, correctLevel: QRCode.CorrectLevel.L });
+
+      // Canvas → img (canvas se při PDF tisku nezobrazí)
+      setTimeout(() => {
+        const canvas = tmp.querySelector('canvas');
+        if (canvas) {
+          const img = new Image();
+          img.src = canvas.toDataURL('image/png');
+          img.style.cssText = 'width:20mm;height:20mm;display:block;margin:0 auto';
+          el.appendChild(img);
+        } else {
+          // fallback: qrcode.js vytvořil tabulku
+          const tbl = tmp.querySelector('table');
+          if (tbl) {
+            const clone = tbl.cloneNode(true);
+            clone.style.cssText = 'width:20mm;height:20mm;border-collapse:collapse';
+            el.appendChild(clone);
+          }
+        }
+        document.body.removeChild(tmp);
+      }, 80);
+    } catch(err) { /* QR lib not loaded */ }
+    const lbl = document.createElement('p');
+    lbl.className = 'ct-qr-label';
+    lbl.textContent = 'QR – č. smlouvy';
+    el.appendChild(lbl);
+  });
+
+  // Odeslání do Google Sheets (asynchronně, paralelně s tiskem)
+  sendDataToGoogleSheets();
+
+  // QR kód potřebuje čas na vygenerování (canvas → img konverze)
+  setTimeout(() => {
+    window.print();
+    bumpCounter();
+    refreshContractNum();
+  }, 600);
+}
+
+/* ============================================================
+   CLEAR FORM
+============================================================ */
+function clearForm() {
+  if (!confirm('Opravdu vymazat všechna pole formuláře?')) return;
+  ['cust-name','cust-id-num','cust-addr','goods-desc','goods-sku',
+   'goods-weight','goods-brand','goods-sn','price-total',
+   'akontace','doplatek','monthly-pay']
+    .forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('cust-phone').value = '+420 ';
+  document.getElementById('hint-akontace').textContent = '';
+  document.getElementById('hint-monthly').textContent = '';
+  document.getElementById('cb-bank').checked = false;
+  document.getElementById('gt-other').checked = true;
+  document.getElementById('sel-months').value = '3';
+  document.getElementById('cust-id-type').value = 'OP';
+  akontaceManual = false;
+  onGoodsTypeChange();
+  onIdTypeChange();
+}
+
+/* ============================================================
+   GOOGLE SHEETS — toast helper
+============================================================ */
+function showToast(type, html, autohideMs) {
+  const t = document.getElementById('sheets-toast');
+  t.className = type;
+  t.innerHTML = html;
+  if (autohideMs) setTimeout(() => { t.style.opacity='0'; setTimeout(()=>{t.style.display='none';t.style.opacity='';},400); }, autohideMs);
+}
+
+/* ============================================================
+   GOOGLE SHEETS — odeslání dat
+============================================================ */
+async function sendDataToGoogleSheets() {
+  if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes('YOUR_GOOGLE')) {
+    showToast('no-url',
+      '⚠️ Google Sheets není nakonfigurováno — vlož URL do GOOGLE_SCRIPT_URL v kódu.',
+      6000);
+    return;
+  }
+
+  const d = collectData();
+  const payload = {
+    contractNumber       : d.contractNum,
+    branchCode           : d.branch,
+    branchLabel          : d.bi.label,
+    company              : d.bi.companyPlain,
+    ico                  : d.bi.ico,
+    employeeName         : d.empName,
+    employeeInitials     : d.initials,
+    customerName         : d.custName,
+    idType               : d.idTypeLabel,
+    idNumber             : d.idNum,
+    phone                : d.phone,
+    customerAddress      : d.addr,
+    goodsType            : d.goodsType,
+    goodsDescription     : d.goodsDesc,
+    goodsSku             : d.goodsSku,
+    goodsWeightGrams     : d.goodsWeight,
+    goodsBrand           : d.goodsBrand,
+    goodsSerialNumber    : d.goodsSn,
+    totalPrice           : d.total,
+    downPayment          : d.ak,
+    remainingAmount      : d.dop,
+    numberOfInstallments : d.months,
+    regularInstallment   : d.reg,
+    bankPaymentAllowed   : d.bankOk,
+    contractDate         : d.today,
+    installmentSchedule  : d.rows.map(r => ({
+      installmentNumber : r.num,
+      dueDate           : r.due,
+      amount            : r.amount
+    }))
+  };
+
+  showToast('sending', '<span class="spin"></span> Ukládám do Google Tabulky…');
+
+  try {
+    const resp = await fetch(GOOGLE_SCRIPT_URL, {
+      method : 'POST',
+      mode   : 'no-cors',   // Apps Script vyžaduje no-cors z lokálního souboru
+      headers: { 'Content-Type': 'text/plain' },
+      body   : JSON.stringify(payload)
+    });
+    // no-cors vrátí opaque response — pokud nedošlo k network erroru, považujeme za OK
+    showToast('ok', '✅ Smlouva <b>' + d.contractNum + '</b> uložena do Google Tabulky.', 5000);
+  } catch (err) {
+    showToast('err', '❌ Chyba odeslání: ' + err.message, 8000);
+    console.error('Sheets error:', err);
+  }
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+renderEmployees();
+refreshContractNum();
+onGoodsTypeChange();
+onIdTypeChange();
+</script>
+</body>
+</html>
