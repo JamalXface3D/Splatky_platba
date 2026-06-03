@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ZB Splátky">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#1a2e5e">
+  <title>ZB Splátky</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.js"></script>
+  <style>
+    /* ── RESET ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:    #1a2e5e;
+      --blue-lt: #3b6ef8;
+      --green:   #166534;
+      --green-lt:#dcfce7;
+      --red:     #991b1b;
+      --red-lt:  #fee2e2;
+      --gray:    #f5f7fb;
+      --border:  #dde3ec;
+      --text:    #1a202c;
+      --muted:   #64748b;
+      --radius:  14px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--blue);
+      color: var(--text);
+      height: 100dvh;
+      overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+    }
+
+    /* ── SCREENS ── */
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      transition: opacity .25s, transform .25s;
+    }
+    .screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(20px);
+    }
+
+    /* ── HEADER ── */
+    .top-bar {
+      background: var(--blue);
+      color: #fff;
+      padding: 52px 20px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .top-bar .logo {
+      width: 38px; height: 38px;
+      background: #fff;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 900; color: var(--blue);
+      letter-spacing: -0.5px; flex-shrink: 0;
+    }
+    .top-bar h1 { font-size: 18px; font-weight: 700; }
+    .top-bar .sub { font-size: 12px; opacity: .65; margin-top: 1px; }
+    .top-bar .back-btn {
+      margin-left: auto; background: rgba(255,255,255,.15);
+      border: none; color: #fff; border-radius: 8px;
+      padding: 7px 14px; font-size: 13px; font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* ── CARD CONTAINER ── */
+    .card-wrap {
+      flex: 1; overflow-y: auto;
+      padding: 0 16px 32px;
+      background: var(--gray);
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+
+    /* ── HOME SCREEN ── */
+    #screen-home .card-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+    .home-icon {
+      width: 100px; height: 100px;
+      background: var(--blue);
+      border-radius: 28px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 8px;
+    }
+    .home-icon svg { width: 52px; height: 52px; }
+    .home-title { font-size: 22px; font-weight: 800; color: var(--blue); text-align: center; }
+    .home-sub   { font-size: 14px; color: var(--muted); text-align: center; line-height: 1.5; }
+
+    /* ── CAMERA SCREEN ── */
+    #screen-scan {
+      background: #000;
+    }
+    #screen-scan .top-bar { background: rgba(0,0,0,.6); }
+    .camera-wrap {
+      flex: 1; position: relative; overflow: hidden;
+    }
+    #video {
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .scan-overlay {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .scan-frame {
+      width: 240px; height: 240px;
+      position: relative;
+    }
+    .scan-frame::before, .scan-frame::after,
+    .scan-corner-bl, .scan-corner-br {
+      content: ''; position: absolute;
+      width: 36px; height: 36px;
+      border-color: #fff; border-style: solid;
+    }
+    .scan-frame::before  { top:0;    left:0;  border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+    .scan-frame::after   { top:0;    right:0; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+    .scan-corner-bl      { bottom:0; left:0;  border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+    .scan-corner-br      { bottom:0; right:0; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+    .scan-line {
+      position: absolute; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, #3b6ef8, transparent);
+      animation: scanAnim 2s ease-in-out infinite;
+    }
+    @keyframes scanAnim {
+      0%   { top: 10%; }
+      50%  { top: 90%; }
+      100% { top: 10%; }
+    }
+    .scan-hint {
+      position: absolute; bottom: 32px; left: 0; right: 0;
+      text-align: center; color: rgba(255,255,255,.8);
+      font-size: 14px; font-weight: 500;
+    }
+    #canvas { display: none; }
+
+    /* ── CONFIRM SCREEN ── */
+    .section-label {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .8px; color: var(--muted);
+      padding: 20px 0 8px;
+    }
+    .info-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .info-row {
+      display: flex; align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-label {
+      font-size: 12px; color: var(--muted); font-weight: 500;
+      width: 90px; flex-shrink: 0;
+    }
+    .info-value { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+    .info-value.money { color: #166534; font-family: monospace; font-size: 16px; }
+    .info-value.contract { color: var(--blue); font-family: monospace; }
+
+    .splátka-card {
+      background: #fff;
+      border: 2px solid var(--blue-lt);
+      border-radius: var(--radius);
+      padding: 18px 16px;
+      margin-top: 4px;
+    }
+    .splátka-num {
+      font-size: 12px; color: var(--blue-lt); font-weight: 700;
+      text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px;
+    }
+    .splátka-amount {
+      font-size: 32px; font-weight: 800; color: var(--blue);
+      font-family: monospace; line-height: 1;
+    }
+    .splátka-termin {
+      font-size: 13px; color: var(--muted); margin-top: 4px;
+    }
+    .splátka-termin span { color: var(--red); font-weight: 600; }
+
+    .all-paid-badge {
+      background: var(--green-lt);
+      border: 1px solid #86efac;
+      border-radius: 10px;
+      padding: 12px 16px;
+      text-align: center;
+      font-size: 14px; font-weight: 700; color: var(--green);
+      margin-top: 12px;
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: block; width: 100%;
+      padding: 16px; border-radius: var(--radius);
+      font-size: 16px; font-weight: 800;
+      border: none; cursor: pointer;
+      font-family: inherit;
+      transition: transform .1s, opacity .15s;
+    }
+    .btn:active { transform: scale(.97); opacity: .85; }
+    .btn-primary {
+      background: var(--blue-lt); color: #fff;
+      box-shadow: 0 4px 16px rgba(59,110,248,.35);
+    }
+    .btn-green {
+      background: #16a34a; color: #fff;
+      box-shadow: 0 4px 16px rgba(22,163,74,.35);
+    }
+    .btn-danger {
+      background: #dc2626; color: #fff;
+    }
+    .btn-outline {
+      background: #fff; color: var(--muted);
+      border: 1.5px solid var(--border);
+    }
+    .btn-group {
+      display: flex; flex-direction: column; gap: 10px;
+      padding: 20px 0;
+    }
+
+    /* ── RESULT SCREEN ── */
+    #screen-result .card-wrap {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 16px; text-align: center;
+    }
+    .result-icon {
+      width: 80px; height: 80px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px;
+    }
+    .result-icon.ok  { background: var(--green-lt); }
+    .result-icon.err { background: var(--red-lt); }
+    .result-title {
+      font-size: 22px; font-weight: 800; color: var(--blue);
+    }
+    .result-sub {
+      font-size: 14px; color: var(--muted); line-height: 1.6;
+      max-width: 280px;
+    }
+
+    /* ── LOADING ── */
+    .loading-wrap {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 16px; flex: 1;
+    }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 3px solid #e2e8f0;
+      border-top-color: var(--blue-lt);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { font-size: 15px; color: var(--muted); font-weight: 500; }
+  </style>
+</head>
+<body>
+
+<!-- ============ SCREEN 1: ÚVOD ============ -->
+<div class="screen" id="screen-home">
+  <div class="top-bar">
+    <div class="logo">ZB</div>
+    <div>
+      <div class="home-title" style="color:#fff;font-size:16px">Zastavárna Výsluní</div>
+      <div class="sub">Systém splátek</div>
+    </div>
+  </div>
+  <div class="card-wrap">
+    <div class="home-icon">
+      <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="6" y="6" width="16" height="16" rx="2" stroke="white" stroke-width="2.5" fill="none"/>
+        <rect x="30" y="6" width="16" height="16" rx="2" stroke="white" stroke-width="2.5" fill="none"/>
+        <rect x="6" y="30" width="16" height="16" rx="2" stroke="white" stroke-width="2.5" fill="none"/>
+        <rect x="10" y="10" width="8" height="8" rx="1" fill="white"/>
+        <rect x="34" y="10" width="8" height="8" rx="1" fill="white"/>
+        <rect x="10" y="34" width="8" height="8" rx="1" fill="white"/>
+        <rect x="30" y="30" width="4" height="4" fill="white"/>
+        <rect x="38" y="30" width="4" height="4" fill="white"/>
+        <rect x="30" y="38" width="4" height="4" fill="white"/>
+        <rect x="38" y="38" width="8" height="8" rx="1" fill="white"/>
+      </svg>
+    </div>
+    <div class="home-title">Přijmout splátku</div>
+    <div class="home-sub">Naskenujte QR kód ze splátkové smlouvy zákazníka</div>
+    <button class="btn btn-primary" onclick="startScan()" style="margin-top:8px">
+      📷&nbsp; Naskenovat QR kód
+    </button>
+  </div>
+</div>
+
+<!-- ============ SCREEN 2: KAMERA ============ -->
+<div class="screen hidden" id="screen-scan">
+  <div class="top-bar">
+    <div class="logo">ZB</div>
+    <div>
+      <div style="font-size:16px;font-weight:700;color:#fff">Skenování</div>
+      <div class="sub">Namiřte na QR kód smlouvy</div>
+    </div>
+    <button class="back-btn" onclick="stopScan()">✕ Zrušit</button>
+  </div>
+  <div class="camera-wrap">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="canvas"></canvas>
+    <div class="scan-overlay">
+      <div class="scan-frame">
+        <div class="scan-line"></div>
+        <div class="scan-corner-bl"></div>
+        <div class="scan-corner-br"></div>
+      </div>
+    </div>
+    <div class="scan-hint">Zamiřte QR kód do rámečku</div>
+  </div>
+</div>
+
+<!-- ============ SCREEN 3: LOADING ============ -->
+<div class="screen hidden" id="screen-loading">
+  <div class="top-bar">
+    <div class="logo">ZB</div>
+    <div><div style="font-size:16px;font-weight:700;color:#fff">Načítání smlouvy</div></div>
+  </div>
+  <div class="card-wrap">
+    <div class="loading-wrap">
+      <div class="spinner"></div>
+      <div class="loading-text">Načítám data ze smlouvy…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SCREEN 4: POTVRZENÍ ============ -->
+<div class="screen hidden" id="screen-confirm">
+  <div class="top-bar">
+    <div class="logo">ZB</div>
+    <div>
+      <div style="font-size:16px;font-weight:700;color:#fff">Potvrdit platbu</div>
+      <div class="sub" id="confirm-sub">Zkontrolujte údaje</div>
+    </div>
+    <button class="back-btn" onclick="goHome()">✕</button>
+  </div>
+  <div class="card-wrap">
+    <div class="section-label">Smlouva</div>
+    <div class="info-card">
+      <div class="info-row">
+        <span class="info-label">Č. smlouvy</span>
+        <span class="info-value contract" id="cf-cislo">—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Zákazník</span>
+        <span class="info-value" id="cf-zakaznik">—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Zboží</span>
+        <span class="info-value" id="cf-popis">—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Sklad. č.</span>
+        <span class="info-value" id="cf-sklad">—</span>
+      </div>
+    </div>
+
+    <div class="section-label">Splátka k úhradě</div>
+    <div id="splátka-area"></div>
+
+    <div class="btn-group">
+      <button class="btn btn-green" id="btn-pay" onclick="confirmPayment()">
+        ✓&nbsp; Potvrdit přijetí platby
+      </button>
+      <button class="btn btn-outline" onclick="goHome()">Zrušit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SCREEN 5: UKLÁDÁNÍ ============ -->
+<div class="screen hidden" id="screen-saving">
+  <div class="top-bar">
+    <div class="logo">ZB</div>
+    <div><div style="font-size:16px;font-weight:700;color:#fff">Ukládám platbu</div></div>
+  </div>
+  <div class="card-wrap">
+    <div class="loading-wrap">
+      <div class="spinner"></div>
+      <div class="loading-text">Zapisuji do Google Tabulky…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SCREEN 6: VÝSLEDEK ============ -->
+<div class="screen hidden" id="screen-result">
+  <div class="top-bar">
+    <div class="logo">ZB</div>
+    <div><div style="font-size:16px;font-weight:700;color:#fff" id="result-header">Výsledek</div></div>
+  </div>
+  <div class="card-wrap">
+    <div class="result-icon ok" id="result-icon">✓</div>
+    <div class="result-title" id="result-title">Platba přijata</div>
+    <div class="result-sub" id="result-sub">Splátka byla úspěšně zapsána.</div>
+    <button class="btn btn-primary" onclick="goHome()" style="margin-top:24px;max-width:320px">
+      ← Zpět na úvod
+    </button>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbydCIN9A5k50ya0PiMsb5gtxnTx3l6Yr9gdUAqXbRtkCoF3INz50nZr6wXP4rz8E8YJ/exec';
+
+// ── STATE ─────────────────────────────────────────────────
+let videoStream    = null;
+let scanInterval   = null;
+let contractData   = null;
+let nextInstallment = null;
+
+// ── SCREEN NAVIGATION ────────────────────────────────────
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.toggle('hidden', s.id !== id);
+  });
+}
+
+function goHome() {
+  stopScan();
+  contractData    = null;
+  nextInstallment = null;
+  show('screen-home');
+}
+
+// ── CAMERA / QR SCAN ─────────────────────────────────────
+async function startScan() {
+  show('screen-scan');
+  try {
+    videoStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+    const video = document.getElementById('video');
+    video.srcObject = videoStream;
+    await video.play();
+    scanInterval = setInterval(scanFrame, 200);
+  } catch(err) {
+    stopScan();
+    showError('Kamera není dostupná', 'Povolte přístup ke kameře v nastavení telefonu a zkuste znovu.');
+  }
+}
+
+function stopScan() {
+  clearInterval(scanInterval);
+  scanInterval = null;
+  if (videoStream) {
+    videoStream.getTracks().forEach(t => t.stop());
+    videoStream = null;
+  }
+}
+
+function scanFrame() {
+  const video  = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+
+  canvas.width  = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx  = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0);
+  const img  = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+
+  if (code && code.data) {
+    const cislo = extractContractNum(code.data);
+    if (cislo) {
+      stopScan();
+      loadContract(cislo);
+    }
+  }
+}
+
+// Vytáhne číslo smlouvy z QR textu
+// Formát: "Smlouva: UL-2026-1000 | Pracovnik: ..."
+function extractContractNum(text) {
+  const m = text.match(/Smlouva:\s*([A-Z]{2}-\d{4}-\d{4})/i);
+  return m ? m[1] : null;
+}
+
+// ── NAČTENÍ SMLOUVY ───────────────────────────────────────
+async function loadContract(cislo) {
+  show('screen-loading');
+  try {
+    const res  = await fetch(`${SCRIPT_URL}?cislo=${encodeURIComponent(cislo)}`);
+    const json = await res.json();
+
+    if (json.status !== 'ok' || !json.contract) {
+      showError('Smlouva nenalezena', `Smlouva č. ${cislo} nebyla nalezena v evidenci.`);
+      return;
+    }
+
+    contractData = json.contract;
+    renderConfirm();
+  } catch(err) {
+    showError('Chyba připojení', 'Nepodařilo se načíst data. Zkontrolujte připojení k internetu.');
+  }
+}
+
+// ── RENDER POTVRZOVACÍ OBRAZOVKY ──────────────────────────
+function renderConfirm() {
+  const c = contractData;
+  document.getElementById('cf-cislo').textContent    = c.cislo;
+  document.getElementById('cf-zakaznik').textContent = c.zakaznik || '—';
+  document.getElementById('cf-popis').textContent    = c.popis    || '—';
+  document.getElementById('cf-sklad').textContent    = c.sklad    || '—';
+  document.getElementById('confirm-sub').textContent = `${c.sheet} · ${c.stav}`;
+
+  // Najdi první nezaplacenou splátku
+  const inst = c.installments;
+  nextInstallment = inst.find(i => !i.paid) || null;
+
+  const total  = inst.length;
+  const paid   = inst.filter(i => i.paid).length;
+  const area   = document.getElementById('splátka-area');
+  const payBtn = document.getElementById('btn-pay');
+
+  if (!nextInstallment) {
+    area.innerHTML = `<div class="all-paid-badge">✓ Všechny splátky jsou zaplaceny</div>`;
+    payBtn.style.display = 'none';
+  } else {
+    const isOverdue = isDateOverdue(nextInstallment.termin);
+    area.innerHTML = `
+      <div class="splátka-card">
+        <div class="splátka-num">Splátka ${nextInstallment.num} z ${total} &nbsp;·&nbsp; Zaplaceno ${paid}/${total}</div>
+        <div class="splátka-amount">${formatMoney(nextInstallment.splatka)}</div>
+        <div class="splátka-termin">
+          Termín: <span style="color:${isOverdue ? 'var(--red)' : 'var(--green)'}">
+            ${nextInstallment.termin}${isOverdue ? ' ⚠ po splatnosti' : ''}
+          </span>
+        </div>
+      </div>`;
+    payBtn.style.display = 'block';
+  }
+
+  show('screen-confirm');
+}
+
+// ── POTVRZENÍ PLATBY ──────────────────────────────────────
+async function confirmPayment() {
+  if (!nextInstallment) return;
+  show('screen-saving');
+
+  const today  = fmtDate(new Date());
+  const c      = contractData;
+  const inst   = c.installments;
+  const allPaid = inst.filter(i => !i.paid).length === 1; // tato je poslední
+
+  // Najdi řádek stavu (první řádek bloku = první inst)
+  const stavRow = inst[0].sheetRow;
+
+  try {
+    await fetch(SCRIPT_URL, {
+      method : 'POST',
+      mode   : 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body   : JSON.stringify({
+        action      : 'mark_paid',
+        sheet       : c.sheet,
+        sheetRow    : nextInstallment.sheetRow,
+        uhrazenoCol : c.uhrazenoCol,
+        stavRow     : stavRow,
+        stavCol     : c.stavCol,
+        date        : today,
+        allPaid     : allPaid
+      })
+    });
+
+    // no-cors = opaque, předpokládáme úspěch
+    showSuccess(
+      'Platba zapsána',
+      `Splátka ${nextInstallment.num} · ${formatMoney(nextInstallment.splatka)}\n` +
+      `Datum: ${today}\nSmlouva: ${c.cislo}`
+    );
+  } catch(err) {
+    showError('Chyba zápisu', 'Platba nebyla uložena. Zkontrolujte připojení a zkuste znovu.');
+  }
+}
+
+// ── VÝSLEDKOVÉ OBRAZOVKY ──────────────────────────────────
+function showSuccess(title, sub) {
+  document.getElementById('result-header').textContent = 'Úspěch';
+  document.getElementById('result-icon').className     = 'result-icon ok';
+  document.getElementById('result-icon').textContent   = '✓';
+  document.getElementById('result-title').textContent  = title;
+  document.getElementById('result-sub').textContent    = sub;
+  show('screen-result');
+}
+
+function showError(title, sub) {
+  document.getElementById('result-header').textContent = 'Chyba';
+  document.getElementById('result-icon').className     = 'result-icon err';
+  document.getElementById('result-icon').textContent   = '✕';
+  document.getElementById('result-title').textContent  = title;
+  document.getElementById('result-sub').textContent    = sub;
+  show('screen-result');
+}
+
+// ── HELPERS ───────────────────────────────────────────────
+function fmtDate(d) {
+  const p = (n) => String(n).padStart(2, '0');
+  return `${p(d.getDate())}.${p(d.getMonth()+1)}.${d.getFullYear()}`;
+}
+
+function formatMoney(n) {
+  return Number(n).toLocaleString('cs-CZ') + ' Kč';
+}
+
+function isDateOverdue(str) {
+  if (!str) return false;
+  const p = str.split('.');
+  if (p.length !== 3) return false;
+  const d = new Date(+p[2], +p[1]-1, +p[0]);
+  d.setHours(0,0,0,0);
+  const t = new Date(); t.setHours(0,0,0,0);
+  return t > d;
+}
+</script>
+</body>
+</html>
